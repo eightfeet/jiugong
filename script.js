@@ -1,21 +1,3 @@
-/**
- *
- * 洗牌工具
- * @param { Array } arr
- * @returns
- */
-function KdShuffle(arr){
-	let len = arr.length,
-		i,temp;
-	while (len){
-		i = Math.floor(Math.random() * len--);
-		temp = arr[i];
-		arr[i] = arr[len];
-		arr[len] = temp;
-	}
-	return arr;
-}
-
 function getFullNum(num){
     //处理非数字
     if(isNaN(num)){return num};
@@ -35,7 +17,7 @@ function getFullNum(num){
 }
 
 
-var data = [1,2,3,4,5,6];
+var data = [1,2,3,4,5,6,7,8];
 // 九宫格补全：
 function getGameDataLength(n) {
     if ((n-4)%4 === 0 && n !== 4) return n
@@ -45,7 +27,7 @@ function getGameDataLength(n) {
 // 获取游戏数据长度
 var gameDataLength = getGameDataLength(data.length);
 
-console.log('gameDataLength', gameDataLength);
+console.log('gameDataLength11', gameDataLength);
 
 // 补充游戏数据并洗牌
 function supplementingData(data, gameDataLength) {
@@ -141,43 +123,35 @@ function renderLottery(prize, oMain, fn){
 
     var itemsDomList = document.getElementById('gameitems').children;
     
-    var timer = null,
-        iNow = -1,
-        circle = 1, // 至少要转几圈
-        iSpeed = 300,
-        count = 0, // 转了多少次
-        iLast = gameDataLength; // 最后一次转圈圈
-
-        (function run(){
-
-            // 前3个加速
-            if(count > 2){ iSpeed = 100; }
-
-            // 后3个减速
-            if(iLast < 2){ iSpeed = 300; }
-
-            iNow++;
-            count++;
-
-            if(iNow >= gameDataLength){ iNow = 0; circle--; }
-            
+    var timer = null;
+        var pointHistoryLocation = 0; // 历史指针位置
+        var pointerLocation = 0; // 指针位置
+        var defaultCircle = 1; // 默认几圈
+        var pathLength = defaultCircle * gameDataLength + getPrizeInd; // 算出路程
+        var buffer = 5;
+        (function fun(){
             for (let index = 0; index < itemsDomList.length; index++) {
                 const element = itemsDomList[index];
                 element.classList.remove('active');
             }
-            itemsDomList[iNow].classList.add('active');
-
-            timer = setTimeout(run, iSpeed);
-
-            // 得到结果
-            if(getPrizeInd !== -1 && circle <= 0 && iNow == getPrizeInd){
-
-                // 为了最后一圈减速，再跑一圈
-                iLast--;
-                if(iLast == 0){
-                    clearTimeout(timer);
-                    console.log(`中奖了！${prize}`);
+            console.log('pointerLocation', pointerLocation);
+            itemsDomList[pointerLocation%gameDataLength].classList.add('active');
+            timer = setTimeout(function(){
+                pointerLocation++;
+                if(pointerLocation < 10 && buffer !== 0){
+                    buffer--;
                 }
-            }
+                if(pointerLocation > (pathLength-10)){
+                    buffer++;
+                }
+                if(pointerLocation <= pathLength){
+                    fun();
+                }else{
+                    pointerLocation = 0;
+                    buffer = 0;
+                    pointHistoryLocation = newGameData.length - getPrizeInd;
+                    console.log(`恭喜您！${prize}`, `创建历史位置 ${pointHistoryLocation}`)
+                }
+            },100+buffer*50);
         })();
 }
