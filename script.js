@@ -1,11 +1,11 @@
-function getFullNum(num){
+function getFullNum(num) {
     //处理非数字
-    if(isNaN(num)){return num};
-    
+    if (isNaN(num)) { return num };
+
     //处理不需要转换的数字
     var str = num.toString();
-    
-    if(!/e/i.test(str)){
+
+    if (!/e/i.test(str)) {
         const strArr = str.split('.');
         if (strArr[1]) {
             strArr[1] = strArr[1].slice(0, 3);
@@ -17,11 +17,11 @@ function getFullNum(num){
 }
 
 
-var data = [1,2,3,4,5,6,7,8];
+var data = [1, 2, 3, 4, 5, 6, 7, 8];
 // 九宫格补全：
 function getGameDataLength(n) {
-    if ((n-4)%4 === 0 && n !== 4) return n
-    return n + 4 - (n-4)%4
+    if ((n - 4) % 4 === 0 && n !== 4) return n
+    return n + 4 - (n - 4) % 4
 }
 
 // 获取游戏数据长度
@@ -46,11 +46,11 @@ var newGameData = supplementingData(data, gameDataLength);
 
 // 游戏布局
 function GameLayout(prizes) {
-    var sideLength = getFullNum((prizes.length-4) / 4 + 2);
-    var step = getFullNum(100/sideLength);
+    var sideLength = getFullNum((prizes.length - 4) / 4 + 2);
+    var step = getFullNum(100 / sideLength);
     var maxRate = getFullNum((sideLength - 1) * step);
     const loatingThreshold = 0.3;
-    let X = 0, Y = 0, dom='';
+    let X = 0, Y = 0, dom = '';
     stepGrown = 1;
 
     const startDom = `<div id="start" style="background-color:rgba(255, 0, 0, 0.5); width:33.333%; height:33.333%; position: absolute; top: 50%; left: 50%; margin-left:-16.665%; margin-top:-16.665%">&nbsp;</div>`
@@ -65,7 +65,7 @@ function GameLayout(prizes) {
                 X = maxRate;
                 Y = 0;
                 stepGrown = 2;
-            } 
+            }
         }
 
         if (stepGrown === 2) {
@@ -74,7 +74,7 @@ function GameLayout(prizes) {
                 X = maxRate;
                 Y = 0;
                 stepGrown = 3;
-            } 
+            }
         }
 
         if (stepGrown === 3) {
@@ -84,74 +84,100 @@ function GameLayout(prizes) {
                 X = 0;
                 Y = maxRate;
                 stepGrown = 4;
-            } 
+            }
         }
 
         if (stepGrown === 4) {
             Y = Y - step;
             if (Y === step) {
                 stepGrown = 1;
-            } 
+            }
         }
     }
     document.getElementById('wrap').innerHTML = `<div id="gameitems">${dom}</div>${startDom}`;
     document.getElementById('start').onclick = lottery;
 }
 
-function lottery(){
+function lottery() {
     console.log('开始抽奖');
     // 这个setTimeout是假设的请求
-    setTimeout(function(){
+    setTimeout(function () {
         var iEnd = Math.floor(Math.random() * gameDataLength);
-        renderLottery(newGameData[iEnd]);
+        Promise.resolve().then(renderHistory).then(() => renderLottery(newGameData[iEnd]));
     }, 10);
 }
 
 GameLayout(newGameData);
 
-// 开始转动
-function renderLottery(prize, oMain, fn){
-    
-    var getPrizeInd = 0;
-    for (let index = 0; index < newGameData.length; index++) {
-        const element = newGameData[index];
-        if (element === prize) {
-            getPrizeInd = index;
-            break;
-        }
-    } 
+var historyPrizeInd = 0;
 
+// 渲染遗留数据
+function renderHistory() {
     var itemsDomList = document.getElementById('gameitems').children;
-    
-    var timer = null;
-        var pointHistoryLocation = 0; // 历史指针位置
+    var surplus = historyPrizeInd;
+    return new Promise((resolve) => {
+        if (surplus <= 0) {
+            return resolve();
+        }
+        (function run() {
+            surplus++;
+            for (let index = 0; index < gameDataLength; index++) {
+                const element = itemsDomList[index];
+                element.classList.remove('active');
+            }
+            console.log(surplus);
+            itemsDomList[surplus].classList.add('active');
+            if (surplus < gameDataLength) {
+                run();
+            } else {
+                resolve();
+            }
+        })()
+    });
+}
+
+// 渲染抽奖转动
+function renderLottery(prize) {
+    return new Promise(resolve => {
+        var getPrizeInd = 0;
+        for (let index = 0; index < newGameData.length; index++) {
+            const element = newGameData[index];
+            if (element === prize) {
+                getPrizeInd = index;
+                break;
+            }
+        }
+
+        var itemsDomList = document.getElementById('gameitems').children;
+
+        var timer = null;
         var pointerLocation = 0; // 指针位置
         var defaultCircle = 1; // 默认几圈
         var pathLength = defaultCircle * gameDataLength + getPrizeInd; // 算出路程
         var buffer = 5;
-        (function fun(){
+        (function fun() {
             for (let index = 0; index < itemsDomList.length; index++) {
                 const element = itemsDomList[index];
                 element.classList.remove('active');
             }
-            console.log('pointerLocation', pointerLocation);
-            itemsDomList[pointerLocation%gameDataLength].classList.add('active');
-            timer = setTimeout(function(){
+            itemsDomList[pointerLocation % gameDataLength].classList.add('active');
+            timer = setTimeout(function () {
                 pointerLocation++;
-                if(pointerLocation < 10 && buffer !== 0){
+                if (pointerLocation < 10 && buffer !== 0) {
                     buffer--;
                 }
-                if(pointerLocation > (pathLength-10)){
+                if (pointerLocation > (pathLength - 10)) {
                     buffer++;
                 }
-                if(pointerLocation <= pathLength){
+                if (pointerLocation <= pathLength) {
                     fun();
-                }else{
+                } else {
                     pointerLocation = 0;
                     buffer = 0;
-                    pointHistoryLocation = newGameData.length - getPrizeInd;
-                    console.log(`恭喜您！${prize}`, `创建历史位置 ${pointHistoryLocation}`)
+                    resolve();
+                    historyPrizeInd = getPrizeInd;
                 }
-            },100+buffer*50);
+            }, 100 + buffer * 50);
         })();
+    });
 }
