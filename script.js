@@ -75,7 +75,7 @@ function GameLayout(prizes) {
 
     for (let index = 0; index < prizes.length; index++) {
         const element = prizes[index];
-        dom = `${dom}<div style="position:absolute; width:${step}%; height:${step}%; background-color: green; left: ${X}%; top: ${Y}%">${element}</div>`;
+        dom = `${dom}<div style="position:absolute; width:${step}%; height:${step}%; box-sizing: border-box; background-color: green; left: ${X}%; top: ${Y}%">${element}</div>`;
 
         if (stepGrown === 1) {
             X = X + step;
